@@ -80,9 +80,9 @@ for i = 1:21
 end
 
 %% Windowing + Feature Extraction
-WS_list = [64, 96, 128];
+WS_list = [32, 48, 64, 96];
 SP = 60;
-for WS_idx = 1:3
+for WS_idx = 1:length(WS_list)
     WS = WS_list(WS_idx);
     for i = 1:21
         eval(['NumofWindow = fix((size(subject', num2str(i), '_AccGyro, 1) - WS)/SP) + 1;'])
@@ -145,10 +145,10 @@ for WS_idx = 1:3
             
             if model_idx == 1
                 % 1. Random Forest
-                model = fitcensemble(FT_GT_train(:, 1:560), Train_Y, 'Method', 'Bag', 'NumLearningCycles', 500, 'Learners', templateTree('MinLeafSize', 5, 'NumVariablesToSample', 30));
+                model = fitcensemble(FT_GT_train(:, 1:560), Train_Y, 'Method', 'Bag', 'NumLearningCycles', 200, 'Learners', templateTree('MinLeafSize', 5, 'NumVariablesToSample', 30));
             elseif model_idx == 2
                 % 2. AdaBoost
-                model = fitcensemble(FT_GT_train(:, 1:560), Train_Y, 'Method', 'AdaBoostM2', 'NumLearningCycles', 500, 'Learners', 'Tree');
+                model = fitcensemble(FT_GT_train(:, 1:560), Train_Y, 'Method', 'AdaBoostM2', 'NumLearningCycles', 200, 'Learners', 'Tree');
             elseif model_idx == 3
                 % 3. Decision Tree
                 model = fitctree(FT_GT_train(:, 1:560), Train_Y, 'MinLeafSize', 5);
@@ -374,6 +374,9 @@ for WS_idx = 1:3
             eval(['matrix_size = size(Confusionmatrix', num2str(b), ', 1);'])
             eval(['Acc = sum(diag(Confusionmatrix', num2str(b), '))/sum(sum(Confusionmatrix', num2str(b), '));'])
             
+            Sen = [];   
+            Pre = [];  
+
             for i = 1:matrix_size
                 eval(['Sen(i, 1) = Confusionmatrix', num2str(b), '(i,i)/sum(Confusionmatrix', num2str(b), '(i,:));'])
                 eval(['Pre(1, i) = Confusionmatrix', num2str(b), '(i,i)/sum(Confusionmatrix', num2str(b), '(:,i));'])
@@ -390,14 +393,65 @@ for WS_idx = 1:3
             TotalMatrix(b, 3) = mean(Pre(1,:), 'omitnan');
             TotalMatrix(b, 4) = mean(F1_vec, 'omitnan');
             
+            if model_idx == 1  % 只畫 Random Forest
             figure; 
             plot(Total_True_Label); hold on; 
             plot(Final_Predict);
-            title(['Subject', num2str(b)]); 
+            title(['WS=', num2str(WS), ' | ', model_names{model_idx}, ' | Fold=', num2str(b)]);
             legend('True', 'Pred');
+            end
         end
+
         col_start = (model_idx - 1) * 4 + 1;
         col_end = model_idx * 4;
         total(WS_idx, col_start:col_end) = mean(TotalMatrix, 1);
     end
 end
+
+%% 圖1：三個模型比較 (WS=48)
+figure('Position', [100 100 800 400]);
+data_model = [total(2, 1:4)*100;    % Random Forest
+              total(2, 5:8)*100;    % AdaBoost
+              total(2, 9:12)*100];  % Decision Tree
+
+b1 = bar(data_model');  % ← 轉置
+b1(1).FaceColor = [0.20 0.40 0.68];
+b1(2).FaceColor = [0.18 0.56 0.44];
+b1(3).FaceColor = [0.45 0.45 0.42];
+set(gca, 'XTickLabel', {'Accuracy','Sensitivity','Precision','F1-Score'});
+ylim([50 100]);
+ylabel('Score (%)');
+legend('Random Forest','AdaBoost','Decision Tree','Location','southeast');
+title('模型效能比較 (WS=48, SP=60)');
+grid on;
+
+%% 圖2：四種視窗大小比較（以 Random Forest 為例）
+figure('Position', [100 100 800 400]);
+data_ws = [total(1, 1:4)*100;   % WS=32
+           total(2, 1:4)*100;   % WS=48
+           total(3, 1:4)*100;   % WS=64
+           total(4, 1:4)*100];  % WS=96
+
+b2 = bar(data_ws');  % 加轉置
+
+b2(1).FaceColor = [0.45 0.45 0.42];  % WS=32 → 灰
+b2(2).FaceColor = [0.20 0.40 0.68];  % WS=48 → 藍
+b2(3).FaceColor = [0.75 0.60 0.40];  % WS=64 → 淺棕
+b2(4).FaceColor = [0.75 0.40 0.20];  % WS=96 → 橘
+set(gca, 'XTickLabel', {'Accuracy','Sensitivity','Precision','F1-Score'});
+ylim([50 100]);
+ylabel('Score (%)');
+legend('WS=32','WS=48','WS=64','WS=96','Location','southeast');
+title('不同視窗大小效能比較 (Random Forest, SP=60)');
+grid on;
+
+%% 折線趨勢圖
+figure('Position', [100 100 800 400]);
+ws_values = [32, 48, 64, 96];
+acc_values = total(:, 1)' * 100;  % 第1欄 = Random Forest Accuracy
+plot(ws_values, acc_values, '-o', 'LineWidth', 2, 'Color', [0.20 0.40 0.68]);
+xlabel('Window Size (samples)');
+ylabel('Accuracy (%)');
+title('視窗大小對辨識準確率的影響 (Random Forest)');
+ylim([50 100]);
+grid on;
