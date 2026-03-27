@@ -92,8 +92,6 @@ Leave-One-Subject-Out（7-fold），以受試者為單位分組
 | Precision | `86.12%` |
 | F1-Score | `0.845` |
 
-> 數值待程式最終版本跑完後填入
-
 ---
 
 ## 專案現況
