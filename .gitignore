@@ -1,0 +1,22 @@
+# MATLAB
+*.asv
+*.mex*
+*.mat
+slprj/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Flutter / Dart (app/)
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
