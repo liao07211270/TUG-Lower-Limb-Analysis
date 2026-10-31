@@ -29,7 +29,7 @@
 2. Python（只需 numpy）：`python evaluation/replay_eval.py` 以 `labels/`、`predictions/`、`data/` 重算指標與各階段時間誤差。
 
 ## 評估結果摘要
-詳見 [`evaluation/results.md`](evaluation/results.md)。
+詳見 [`evaluation/results.md`](evaluation/results.md)（Python 重算）與 [`evaluation/results_matlab.md`](evaluation/results_matlab.md)（MATLAB 實跑驗證）。
 
 | 評估條件 | Accuracy | Sensitivity | Precision | F1 |
 |---|---|---|---|---|
